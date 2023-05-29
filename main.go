@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"github/npbbright/futureskill/controller"
 	"github/npbbright/futureskill/service"
 	"log"
 
@@ -32,10 +33,31 @@ func main() {
 	}
 	route := gin.Default()
 	//route.Use(service.Authenticate())
-	route.POST("/createmovie", service.AddMovie)
-	route.GET("/getmovie/:get_id", service.GetMoive)
-	route.PUT("/updaterating/:update_id", service.UpdateRating)
-	route.DELETE("/delete/:delete_id", service.DelMoive)
+	route.POST("/createmovie", func(c *gin.Context) {
+		var creatMovie service.Movie_Service = service.MovieHandle(*c)
+		var movieController controller.ControllerMovie = controller.ServiceHandler(&creatMovie)
+		movieController.AddMovie(c)
+	})
+	route.GET("/getmovie/:get_id", func(ctx *gin.Context) {
+		var getMovie service.Movie_Service = service.MovieHandle(*ctx)
+		var getController controller.ControllerMovie = controller.ServiceHandler(&getMovie)
+		getController.GetMovie(ctx)
+	})
+	route.PUT("/updaterating/:update_id", func(ctx *gin.Context) {
+		var updateRate service.Movie_Service = service.MovieHandle(*ctx)
+		var updateController controller.ControllerMovie = controller.ServiceHandler(&updateRate)
+		updateController.UpdateRate(ctx)
+	})
+	route.DELETE("/delete/:delete_id", func(ctx *gin.Context) {
+		var deleteService service.Movie_Service = service.MovieHandle(*ctx)
+		var deleteController controller.ControllerMovie = controller.ServiceHandler(&deleteService)
+		deleteController.DelMovie(ctx)
+	})
+	route.PATCH("/resotre/:restore_id", func(ctx *gin.Context) {
+		var restoreService service.Movie_Service = service.MovieHandle(*ctx)
+		var resotreContorller controller.ControllerMovie = controller.ServiceHandler(&restoreService)
+		resotreContorller.ResMovie(ctx)
+	})
 
 	route.Run(":9090")
 

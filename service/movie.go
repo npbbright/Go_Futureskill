@@ -3,16 +3,13 @@ package service
 import (
 	"database/sql"
 	"encoding/json"
+	"github/npbbright/futureskill/core"
 	"io"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
-
-type Controller interface {
-	AddMovie(gin *gin.Context)
-}
 
 type Movie struct {
 	ImdbID      string  `json:"imdbID"`
@@ -22,9 +19,30 @@ type Movie struct {
 	IsSuperHero bool    `json:"isSuperHero"`
 	Status      string  `json :"status"`
 }
+type Movie_Service interface {
+	AddMovie(gin *gin.Context)
+	GetMovie(gin *gin.Context, imdbID string)
+	UpdateRating(gin *gin.Context, imdbID string)
+	DeleteMovie(gin *gin.Context, imdbID string)
+	RestoreMovie(gin *gin.Context, restoreID string)
+}
 
-func AddMovie(gin *gin.Context) {
-	var a_movie Movie
+func MovieHandle(gin gin.Context) Movie_Service {
+	var movie core.Movie
+	if err := gin.ShouldBind(&movie); err != nil {
+		gin.AbortWithStatus(http.StatusBadRequest)
+	}
+	return &Movie{
+		ImdbID:      movie.ImdbID,
+		Title:       movie.Title,
+		Year:        movie.Year,
+		Rating:      movie.Rating,
+		IsSuperHero: movie.IsSuperHero,
+		Status:      movie.Status,
+	}
+}
+
+func (a_movie *Movie) AddMovie(gin *gin.Context) {
 	body, err := io.ReadAll(gin.Request.Body)
 	if err != nil {
 		http.Error(gin.Writer, "Failed to Read Request Body", http.StatusBadGateway)
@@ -55,8 +73,7 @@ func AddMovie(gin *gin.Context) {
 	gin.JSON(http.StatusCreated, "message : Create Movie Sucessful!!")
 }
 
-func GetMoive(gin *gin.Context) {
-	imdbID := gin.Param("get_id")
+func (getMovie *Movie) GetMovie(gin *gin.Context, imdbID string) {
 	db, err := sql.Open("ramsql", "goimdb")
 	if err != nil {
 		log.Fatal("Error : Server")
@@ -64,12 +81,12 @@ func GetMoive(gin *gin.Context) {
 	defer db.Close()
 	getScript := db.QueryRow(`SELECT imdbID, title, year, rating, isSuperHero,status 
 	FROM goimdb WHERE imdbID=?`, imdbID)
-	var getMoive Movie
-	err = getScript.Scan(&getMoive.ImdbID, &getMoive.Title, &getMoive.Year, &getMoive.Rating, &getMoive.IsSuperHero, &getMoive.Status)
+
+	err = getScript.Scan(&getMovie.ImdbID, &getMovie.Title, &getMovie.Year, &getMovie.Rating, &getMovie.IsSuperHero, &getMovie.Status)
 	switch err {
 	case nil:
-		if getMoive.Status == "A" {
-			gin.JSON(http.StatusOK, getMoive)
+		if getMovie.Status == "A" {
+			gin.JSON(http.StatusOK, getMovie)
 			return
 		} else {
 			gin.JSON(http.StatusNotFound, map[string]string{"message ": "Movie's not found"})
@@ -85,9 +102,7 @@ func GetMoive(gin *gin.Context) {
 
 }
 
-func UpdateRating(gin *gin.Context) {
-	imdbID := gin.Param("update_id")
-	var UpdateRating Movie
+func (updateRating *Movie) UpdateRating(gin *gin.Context, imdbID string) {
 
 	body, err := io.ReadAll(gin.Request.Body)
 	if err != nil {
@@ -95,7 +110,7 @@ func UpdateRating(gin *gin.Context) {
 		return
 	}
 
-	err = json.Unmarshal(body, &UpdateRating)
+	err = json.Unmarshal(body, &updateRating)
 	if err != nil {
 		gin.JSON(http.StatusInternalServerError, err)
 		return
@@ -111,7 +126,7 @@ func UpdateRating(gin *gin.Context) {
 	if err != nil {
 		log.Fatal("Error : Prepare Stage")
 	}
-	_, err = prepareUpdate.Exec(UpdateRating.Rating, imdbID)
+	_, err = prepareUpdate.Exec(updateRating.Rating, imdbID)
 	switch err {
 	case nil:
 		gin.JSON(http.StatusOK, "Update Rating Succesful!!")
@@ -119,8 +134,7 @@ func UpdateRating(gin *gin.Context) {
 		gin.JSON(http.StatusInternalServerError, err)
 	}
 }
-func DelMoive(gin *gin.Context) {
-	delImdb := gin.Param("delete_id")
+func (_ *Movie) DeleteMovie(gin *gin.Context, delImdb string) {
 	db, err := sql.Open("ramsql", "goimdb")
 	if err != nil {
 		log.Fatal("Error : Server")
@@ -136,4 +150,21 @@ func DelMoive(gin *gin.Context) {
 		log.Fatal("Error : Exec")
 	}
 	gin.JSON(http.StatusOK, "Delete Sucessful")
+}
+func (_ *Movie) RestoreMovie(gin *gin.Context, restoreID string) {
+	db, err := sql.Open("ramsql", "goimdb")
+	if err != nil {
+		log.Fatal("Error : Server")
+	}
+	defer db.Close()
+	delScript := `UPDATE goimdb SET status = ? WHERE imdbID = ?;`
+	delPre, err := db.Prepare(delScript)
+	if err != nil {
+		log.Fatal("Error : Prepare")
+	}
+	_, err = delPre.Exec("A", restoreID)
+	if err != nil {
+		log.Fatal("Error : Exec")
+	}
+	gin.JSON(http.StatusOK, "Restore Sucessful")
 }
