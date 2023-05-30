@@ -2,9 +2,8 @@ package service
 
 import (
 	"database/sql"
-	"encoding/json"
 	"github/npbbright/futureskill/core"
-	"io"
+	"github/npbbright/futureskill/syslog"
 	"log"
 	"net/http"
 
@@ -43,15 +42,6 @@ func MovieHandle(gin gin.Context) Movie_Service {
 }
 
 func (a_movie *Movie) AddMovie(gin *gin.Context) {
-	body, err := io.ReadAll(gin.Request.Body)
-	if err != nil {
-		http.Error(gin.Writer, "Failed to Read Request Body", http.StatusBadGateway)
-
-	}
-	err = json.Unmarshal(body, &a_movie)
-	if err != nil {
-		http.Error(gin.Writer, "Failed to parse JSON data", http.StatusBadGateway)
-	}
 	db, err := sql.Open("ramsql", "goimdb")
 	if err != nil {
 		log.Fatal("Error : Server")
@@ -70,6 +60,8 @@ func (a_movie *Movie) AddMovie(gin *gin.Context) {
 		log.Fatal("Error : Exec Failed", err, exec_add)
 
 	}
+	command := "ADD"
+	syslog.Logsave(command)
 	gin.JSON(http.StatusCreated, "message : Create Movie Sucessful!!")
 }
 
@@ -103,19 +95,6 @@ func (getMovie *Movie) GetMovie(gin *gin.Context, imdbID string) {
 }
 
 func (updateRating *Movie) UpdateRating(gin *gin.Context, imdbID string) {
-
-	body, err := io.ReadAll(gin.Request.Body)
-	if err != nil {
-		gin.JSON(http.StatusInternalServerError, err)
-		return
-	}
-
-	err = json.Unmarshal(body, &updateRating)
-	if err != nil {
-		gin.JSON(http.StatusInternalServerError, err)
-		return
-	}
-
 	db, err := sql.Open("ramsql", "goimdb")
 	if err != nil {
 		log.Fatal("Error : Server")
@@ -129,6 +108,8 @@ func (updateRating *Movie) UpdateRating(gin *gin.Context, imdbID string) {
 	_, err = prepareUpdate.Exec(updateRating.Rating, imdbID)
 	switch err {
 	case nil:
+		command := "UPDATE"
+		syslog.Logsave(command)
 		gin.JSON(http.StatusOK, "Update Rating Succesful!!")
 	default:
 		gin.JSON(http.StatusInternalServerError, err)
@@ -149,6 +130,8 @@ func (_ *Movie) DeleteMovie(gin *gin.Context, delImdb string) {
 	if err != nil {
 		log.Fatal("Error : Exec")
 	}
+	command := "DELETE"
+	syslog.Logsave(command)
 	gin.JSON(http.StatusOK, "Delete Sucessful")
 }
 func (_ *Movie) RestoreMovie(gin *gin.Context, restoreID string) {
@@ -166,5 +149,7 @@ func (_ *Movie) RestoreMovie(gin *gin.Context, restoreID string) {
 	if err != nil {
 		log.Fatal("Error : Exec")
 	}
+	command := "RESTORE"
+	syslog.Logsave(command)
 	gin.JSON(http.StatusOK, "Restore Sucessful")
 }

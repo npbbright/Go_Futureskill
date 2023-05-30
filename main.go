@@ -27,8 +27,16 @@ func main() {
 	PRIMARY KEY (id)
 	);
 	`
+	createLog := `CREATE TABLE IF NOT EXISTS change_log(
+		logid INT AUTO_INCREMENT,
+		log_time DATETIME NOT NULL,
+		command VARCHAR(45) NOT NULL,
+		PRIMARY KEY (logid));`
 
 	if _, err := db.Exec(createTb); err != nil {
+		log.Fatal("create table error", err)
+	}
+	if _, err := db.Exec(createLog); err != nil {
 		log.Fatal("create table error", err)
 	}
 	route := gin.Default()
