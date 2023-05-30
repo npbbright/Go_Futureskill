@@ -31,7 +31,8 @@ func Logsave(command string) {
 	}
 }
 
-/*func Getlog(number int) {
+/* FOR CHECK SYSLOG
+func Getlog(number int) {
 	db, err := sql.Open("ramsql", "goimdb")
 	if err != nil {
 		log.Fatal("Error : Server")

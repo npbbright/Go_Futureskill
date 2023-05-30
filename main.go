@@ -40,7 +40,6 @@ func main() {
 		log.Fatal("create table error", err)
 	}
 	route := gin.Default()
-	//route.Use(service.Authenticate())
 	route.POST("/createmovie", func(c *gin.Context) {
 		var creatMovie service.Movie_Service = service.MovieHandle(*c)
 		var movieController controller.ControllerMovie = controller.ServiceHandler(&creatMovie)
