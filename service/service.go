@@ -26,7 +26,7 @@ type Movie_Service interface {
 	RestoreMovie(gin *gin.Context, restoreID string)
 }
 
-func MovieHandle(gin gin.Context) Movie_Service {
+func MovieHandle(gin *gin.Context) Movie_Service {
 	var movie core.Movie
 	if err := gin.ShouldBind(&movie); err != nil {
 		gin.AbortWithStatus(http.StatusBadRequest)
@@ -60,8 +60,6 @@ func (a_movie *Movie) AddMovie(gin *gin.Context) {
 		log.Fatal("Error : Exec Failed", err, exec_add)
 
 	}
-	command := "ADD"
-	syslog.Logsave(command)
 	gin.JSON(http.StatusCreated, "message : Create Movie Sucessful!!")
 }
 
@@ -152,4 +150,14 @@ func (_ *Movie) RestoreMovie(gin *gin.Context, restoreID string) {
 	command := "RESTORE"
 	syslog.Logsave(command)
 	gin.JSON(http.StatusOK, "Restore Sucessful")
+}
+func (m *Movie) logHandler(gin *gin.Context) {
+	request := gin.Request.Method
+	movie{} := m
+	switch request {
+	case "POST":
+		command := "POST"
+		syslog.Logsave(Movie, command)
+
+	}
 }

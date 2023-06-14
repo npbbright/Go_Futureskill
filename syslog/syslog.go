@@ -11,8 +11,16 @@ type logdata struct {
 	logTime    string
 	logCommand string
 }
+type movieLog struct {
+	ImdbID      string  `json:"imdbID"`
+	Title       string  `json:"title"`
+	Year        int     `json:"year"`
+	Rating      float32 `json:"rating"`
+	IsSuperHero bool    `json:"isSuperHero"`
+	Status      string  `json :"status"`
+}
 
-func Logsave(command string) {
+func Logsave(logMovie movieLog, command string) {
 	db, err := sql.Open("ramsql", "goimdb")
 	if err != nil {
 		log.Fatal("Error : Server")

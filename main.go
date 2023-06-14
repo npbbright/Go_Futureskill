@@ -31,6 +31,7 @@ func main() {
 		logid INT AUTO_INCREMENT,
 		log_time DATETIME NOT NULL,
 		command VARCHAR(45) NOT NULL,
+		JSON VARCHAR(256) NOT NULL,
 		PRIMARY KEY (logid));`
 
 	if _, err := db.Exec(createTb); err != nil {
